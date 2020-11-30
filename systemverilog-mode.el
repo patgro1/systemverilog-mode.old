@@ -15,32 +15,93 @@
       (modify-syntax-entry ?_ "w" synTable)
       synTable))
 
-;; TODO: Check the way we are implementing this... there are a lot of keywords... would it be possible to have them all in a seperate file? We also need to
-;;       add all keywords from verilog and make a distinction between types and keywords and functions.
-(setq systemverilog-mode-font-lock-keywords
-      (let* (
-             (x-keywords '("accept_on" "export" "ref" "alias" "extends" "rict" "always_comb" "extern" "return" "always_ff" "final" "s_always" "always_latch"
-                           "first_match" "s_eventually" "assert" "foreach" "s_nexttime" "assume" "forkjoin" "s_until" "before" "global" "s_until_with"
-                           "bind" "iff" "sequence" "bins" "ignore_bins" "shortint" "binsof" "illegal_bins" "implies" "solve" "break"
-                           "import" "static" "inside" "chandle" "strong" "checker" "interface" "struct" "class" "intersect" "super"
-                           "clocking" "join_any" "sync_accept_on" "const" "join_none" "sync_reject_on" "constraint" "let" "tagged" "context" "local" "this"
-                           "continue" "throughout" "cover" "timeprecision" "covergroup" "matches" "timeunit" "coverpoint" "modport" "type"
-                           "cross" "new" "typedef" "dist" "nexttime" "union" "do" "null" "unique" "endchecker" "package" "unique0" "endclass" "packed" "until"
-                           "endclocking" "priority" "until_with" "endgroup" "program" "untypted" "endinterface" "property" "var" "endpackage" "protected" "virtual"
-                           "endprogram" "pure" "void" "endproperty" "rand" "wait_order" "endsequence" "randc" "weak" "enum" "randcase" "wildcard" "eventually"
-                           "randsequence" "with" "expect" "reject_on" "within" "input" "output" "inout" "localparam" "for" "generate" "endgenerate"
-                           "if" "begin" "else" "end"))
-             (x-types '("logic" "shortreal" "bit" "byte" "string" "int" "longint" "wire" "reg"))
-             (x-keywords-regexp (regexp-opt x-keywords 'words))
-             (x-types-regexp (regexp-opt x-types 'words)))
-        `(
-          (,x-keywords-regexp . font-lock-keyword-face)
-          (,x-types-regexp . font-lock-type-face)
-          )))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Reserved keywords and standardized words
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defconst verilog-95-keywords
+  '(
+    "always" "assign" "begin" "case" "casex" "casez" "deassign" "default" "defparam"
+    "disable" "edge" "else" "end" "endcase" "endfunction" "endmodule" "endprimitive"
+    "endspecify" "endtable" "endtask" "event" "for" "force" "forever" "fork" "function"
+    "if" "ifnone" "initial" "join" "macromodule" "module" "negedge" "parameter" "posedge"
+    "primitive" "release" "repeat" "specify" "specparam" "table" "task" "wait" "while"
+    )
+  "List of all keywords from Verilog 95 specification.")
+(defconst verilog-95-types
+  '(
+    "highz0" "inout" "input" "integer" "large" "medium" "output" "real" "realtime"
+    "reg" "scalared" "small" "supply0" "supply1" "time" "tri" "tri0" "tri1" "triand"
+    "trior" "trireg" "vectored" "wand" "wire" "wor"
+    )
+  "List of all types from Verilog 95 specification.")
+(defconst verilog-95-builtin-primitives
+  '(
+    "and" "buf" "bufif0" "bufif1" "cmos" "nand" "nmos" "nor" "not" "notif0" "notif1"
+    "or" "pmos" "rcmos" "rnmos" "rpmos" "rtran" "rtranif0" "rtranif1" "tran" "tranif0"
+    "tranif1" "xnor" "xor"
+    )
+  "List of all builtin primitives from Verilog 95 specification.")
+(defconst verilog-95-strength
+  '(
+    "highz1" "pull0" "pull1" "pulldown" "pullup" "strong0" "strong1" "weak0" "weak1"
+    )
+  "List of all strength words from Verilog 95 specification.")
+(defconst verilog-01-keywords
+  '(
+    "automatic" "incdir" "include" "cell" "pulsestyle_ondetect" "pulsestyle_onevent"
+    "config" "endconfig" "liblist" "showcancelled" "endgenerate" "library" "generate"
+    "localparam" "use" "noshowcancelled"
+    )
+  "List of all keywords from Verilog 2001 specification.")
+(defconst verilog-01-types
+  '(
+"signed" "unsigned" "genvar"
+    )
+  "List of all types from Verilog 2001 specification.")
+(defconst systemverilog-09-keywords
+  '(
+    "accept_on" "alias" "always_comb" "always_ff" "always_latch" "assert" "assume"
+    "before" "bind" "binsof" "break" "chandle" "checker" "class" "clocking" "const"
+    "constraint" "context" "continue" "cover" "covergroup" "cross" "dist" "do"
+    "endchecker" "endclass" "endclocking" "endgroup" "endinterface" "endpackage"
+    "endprogram" "endproperty" "endsequence" "enum" "eventually" "expect" "export"
+    "extends" "extern" "final" "first_match" "foreach" "forkjoin" "global" "iff"
+    "ignore_bins" "illegal_bins" "implies" "import" "inside" "interface" "intersect"
+    "join_any" "join_none" "let" "local" "matches" "modport" "new" "nexttime" "null"
+    "package" "packed" "priority" "program" "property" "protected" "pure" "randcase"
+    "ref" "reject_on" "restrict" "return" "s_always" "s_eventually" "s_nexttime"
+    "s_until" "s_until_with" "solve" "static" "struct" "super" "sync_accept_on"
+    "sync_reject_on" "tagged" "this" "throughout" "timeprecision" "timeunit" "type"
+    "typedef" "union" "unique" "unique0" "until" "until_with" "untypted" "virtual"
+    "void" "wait_order" "wildcard" "with" "within"
+    )
+  "List of all keywords from Systemverilog specification.")
+(defconst systemverilog-09-types
+  '(
+    "bins" "bit" "byte" "coverpoint" "int" "logic" "longint" "rand" "randc"
+    "randsequence" "sequence" "shortint" "shortreal" "string" "var"
+    )
+  "List of all types from Systemverilog specification.")
+(defconst systemverilog-09-strength
+  '(
+    "strong" "weak"
+    )
+  "List of all strength from Systemverilog specification.")
+
+(defun systemverilog-font-words-init ()
+  "Create all reserved keywords/type list from the constants."
+  (setq systemverilog-keywords
+        (append verilog-95-keywords
+                verilog-01-keywords
+                systemverilog-09-keywords))
+  )
 
 ;;;###autoload
 (define-derived-mode systemverilog-mode prog-mode "systemverilog mode"
   "Major mode for editing systemverilog"
+  (systemverilog-font-words-init)
   (set-syntax-table systemverilog-mode-syntax-table)
   (setq font-lock-defaults '(systemverilog-mode-font-lock-keywords)))
 
